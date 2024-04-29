@@ -28,6 +28,4 @@ void Widget::on_pushButtonOpen_clicked()
     ui->LabelFile->setText(file);
     m_player->setMedia(QUrl::fromLocalFile(file));
     m_player->play();
-
 }
-
