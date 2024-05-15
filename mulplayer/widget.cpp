@@ -15,6 +15,7 @@ Widget::Widget(QWidget *parent)
     ui-> pushButtonStop->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
     ui-> pushButtonPrew->setIcon(style()->standardIcon(QStyle::SP_MediaSkipBackward));
     ui-> pushButtonNext->setIcon(style()->standardIcon(QStyle::SP_MediaSkipForward));
+    ui-> pushButtonMute->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
 
 
     m_player = new QMediaPlayer();
@@ -25,11 +26,20 @@ Widget::Widget(QWidget *parent)
     connect(ui->pushButtonPlay, &QPushButton::clicked, this->m_player, &QMediaPlayer::play);
     connect(ui->pushButtonStop, &QPushButton::clicked, this->m_player, &QMediaPlayer::stop);
     connect(ui->pushButtonPause, &QPushButton::clicked, this->m_player, &QMediaPlayer::pause);
+
     connect(m_player,&QMediaPlayer::durationChanged, this, &Widget::on_durationChanged);
+    connect(m_player,&QMediaPlayer::positionChanged, this, &Widget::on_position_chenged);
+
+    // init playlist:
+    m_playlist_model = new QStandardItemModel(this);
+    ui->tableViewPlayList->setModel(m_playlist_model);
+    m_playlist_model->setHorizontalHeaderLabels(QStringList()<<"Audio track"<<"File");
 }
 
 Widget::~Widget()
 {
+    delete m_playlist;
+    delete m_playlist_model;
     delete m_player;
     delete ui;
 }
@@ -42,6 +52,9 @@ void Widget::on_pushButtonOpen_clicked()
     ui->LabelFile->setText(file);
     m_player->setMedia(QUrl::fromLocalFile(file));
     m_player->play();
+    m_player ->media();
+    this->setWindowTitle(QString("MediaPlayerP_21 - ").append(file.split('/').last()));
+
 }
 
 void Widget::on_horizontalSliderVolume_valueChanged(int value)
@@ -56,5 +69,21 @@ void Widget::on_durationChanged(qint64 duration)
     ui->horizontalSliderProgress->setMaximum(duration);
     QTime qt_duration = QTime ::fromMSecsSinceStartOfDay(duration);
     ui->LabelDuration->setText(QString("Duration: ").append(qt_duration.toString(duration< 3600000?"mm:ss" : "hh:mm:ss")));
+}
+
+
+void Widget::on_pushButtonMute_clicked()
+{
+    m_player -> setMuted(!m_player->isMuted());
+    ui->pushButtonMute->setIcon(style()->standardIcon(
+                                    m_player->isMuted()? QStyle::SP_MediaVolumeMuted: QStyle::SP_MediaVolume));
+
+}
+
+void Widget::on_position_chenged(qint64 position)
+{
+    ui->horizontalSliderProgress->setValue(position);
+    QTime qt_position = QTime ::fromMSecsSinceStartOfDay(position);
+    ui->LabelProgress->setText(QString("Progress: ").append(qt_position.toString(position< 3600000?"mm:ss" : "hh:mm:ss")));
 }
 
